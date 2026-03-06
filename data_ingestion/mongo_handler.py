@@ -2,7 +2,7 @@ from pymongo import MongoClient, ASCENDING
 from pymongo.errors import DuplicateKeyError, ConnectionFailure, BulkWriteError
 from datetime import datetime
 from typing import List, Dict, Optional
-from config.settings import MONGO_URI, MONGO_DB_NAME, MONGO_COLLECTION_RAW
+from config.settings import MONGODB_URI, MONGO_DB_NAME, MONGO_COLLECTION_RAW
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -20,6 +20,7 @@ class MongoHandler:
         self._client: Optional[MongoClient] = None
         self._db = None
         self._collection = None
+        self.connect()
 
     def connect(self) -> None:
         """
@@ -28,7 +29,7 @@ class MongoHandler:
         """
         try:
             # serverSelectionTimeoutMS=5000 → fails fast if URI is wrong
-            self._client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
+            self._client = MongoClient(MONGODB_URI, serverSelectionTimeoutMS=5000)
 
             # Ping to verify connection is actually alive
             self._client.admin.command("ping")
