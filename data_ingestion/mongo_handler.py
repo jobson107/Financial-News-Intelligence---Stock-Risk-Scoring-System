@@ -138,3 +138,17 @@ class MongoHandler:
             "unprocessed": unprocessed,
             "by_source": by_source
         }
+    def _validate_articles(self, articles: List[Dict]) -> List[Dict]:
+        valid=[]
+        for doc in articles:
+            
+            if not doc.get("title") or len(doc["title"]) < 5:
+                continue
+       
+            if not doc.get("source"):
+                continue
+            valid.append(doc)
+        logger.info(f"Validation: {len(valid)}/{len(articles)} passed")
+        return valid
+        
+           

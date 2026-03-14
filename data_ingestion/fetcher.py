@@ -1,11 +1,15 @@
 import feedparser
 import pandas as pd
-from datetime import datetime
+import time
+from datetime import datetime, timedelta
 from typing import List, Dict
 from config.settings import RSS_FEEDS, INGESTION_BATCH_SIZE
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
+
+# Only ingest articles from the last 30 days
+CUTOFF_DAYS = 30
 
 
 def _parse_published_date(entry: dict) -> datetime:
@@ -15,70 +19,98 @@ def _parse_published_date(entry: dict) -> datetime:
     Falls back to utcnow() if missing.
     """
     if hasattr(entry, "published_parsed") and entry.published_parsed:
-        return datetime(*entry.published_parsed[:6])  # unpack year,month,day,hour,min,sec
+        return datetime(*entry.published_parsed[:6])
     return datetime.utcnow()
 
 
 def _clean_text(text: str) -> str:
     """Strip HTML tags and extra whitespace from summaries."""
     import re
-    text = re.sub(r"<[^>]+>", " ", text)   # remove HTML tags
-    text = re.sub(r"\s+", " ", text)         # collapse whitespace
+    text = re.sub(r"<[^>]+>", " ", text)
+    text = re.sub(r"\s+", " ", text)
     return text.strip()
 
 
-def fetch_from_rss(source_name: str, url: str) -> List[Dict]:
+def _is_recent(published: datetime) -> bool:
     """
-    Fetches articles from a single RSS feed.
+    Returns True if the article is within the CUTOFF_DAYS window.
+    Filters out stale articles that would skew the NLP pipeline.
+    """
+    cutoff = datetime.utcnow() - timedelta(days=CUTOFF_DAYS)
+    return published >= cutoff
+
+
+def fetch_from_rss(source_name: str, url: str, retries: int = 3) -> List[Dict]:
+    """
+    Fetches articles from a single RSS feed with retry logic.
+
+    Args:
+        source_name : key from RSS_FEEDS dict (used as MongoDB 'source' field)
+        url         : RSS feed URL
+        retries     : number of attempts before giving up (default 3)
 
     Returns a list of dicts — each dict is one MongoDB document.
-    All fields are explicit so downstream code can rely on them.
     """
     logger.info(f"Fetching: {source_name}")
 
-    try:
-        # feedparser handles HTTP, encoding, and malformed XML gracefully
-        feed = feedparser.parse(url)
+    feed = None
+    for attempt in range(retries):
+        try:
+            feed = feedparser.parse(url)
 
-        if feed.bozo:
-            # bozo=True means feedparser encountered a malformed feed
-            # Still returns partial data, so we continue with a warning
-            logger.warning(f"{source_name}: malformed feed (bozo=True), proceeding anyway")
+            # feed.bozo = True means malformed XML — still has partial data
+            if feed.bozo:
+                logger.warning(f"{source_name}: malformed feed (bozo=True), proceeding anyway")
 
-        articles = []
-        for entry in feed.entries:
-            title = entry.get("title", "").strip()
-            if not title:
-                continue  # skip entries with no title
+            # If we got entries, no need to retry
+            if feed.entries:
+                break
+            else:
+                logger.warning(f"{source_name}: empty feed on attempt {attempt + 1}")
 
-            doc = {
-                # Core fields
-                "title": title,
-                "summary": _clean_text(entry.get("summary", "")),
-                "source": source_name,
-                "link": entry.get("link", ""),
+        except Exception as e:
+            logger.warning(f"{source_name}: attempt {attempt + 1}/{retries} failed → {e}")
+            if attempt < retries - 1:
+                time.sleep(2)  # wait 2 seconds before retrying
 
-                # Dates
-                "published": _parse_published_date(entry),
-                "ingested_at": datetime.utcnow(),
-
-                # Phase 2 NLP pipeline flags — set defaults here
-                "processed": False,
-                "sentiment": None,
-                "keywords": [],
-
-                # Metadata
-                "tags": [t.get("term", "") for t in entry.get("tags", [])],
-            }
-            articles.append(doc)
-
-        logger.info(f"{source_name}: fetched {len(articles)} articles")
-        return articles
-
-    except Exception as e:
-        # Don't crash the whole pipeline if one feed fails
-        logger.error(f"{source_name}: fetch failed → {e}")
+    if not feed or not feed.entries:
+        logger.error(f"{source_name}: all {retries} attempts failed, skipping")
         return []
+
+    articles = []
+    skipped_old = 0
+
+    for entry in feed.entries:
+        title = entry.get("title", "").strip()
+        if not title:
+            continue
+
+        published = _parse_published_date(entry)
+
+        # Skip articles older than CUTOFF_DAYS
+        if not _is_recent(published):
+            skipped_old += 1
+            continue
+
+        doc = {
+            "title": title,
+            "summary": _clean_text(entry.get("summary", "")),
+            "source": source_name,
+            "link": entry.get("link", ""),
+            "published": published,
+            "ingested_at": datetime.utcnow(),
+            "processed": False,
+            "sentiment": None,
+            "keywords": [],
+            "tags": [t.get("term", "") for t in entry.get("tags", [])],
+        }
+        articles.append(doc)
+
+    if skipped_old:
+        logger.info(f"{source_name}: skipped {skipped_old} articles older than {CUTOFF_DAYS} days")
+
+    logger.info(f"{source_name}: fetched {len(articles)} recent articles")
+    return articles
 
 
 def fetch_from_csv(filepath: str) -> List[Dict]:
@@ -95,9 +127,8 @@ def fetch_from_csv(filepath: str) -> List[Dict]:
 
     try:
         df = pd.read_csv(filepath)
-        df = df.dropna(subset=["title"])  # title is mandatory
+        df = df.dropna(subset=["title"])
 
-        # Flexible column mapping — handles different Kaggle CSV schemas
         column_map = {
             "description": "summary",
             "content": "summary",
@@ -107,19 +138,31 @@ def fetch_from_csv(filepath: str) -> List[Dict]:
         }
         df = df.rename(columns={k: v for k, v in column_map.items() if k in df.columns})
 
-        # Fill missing columns with defaults
         for col, default in [("summary", ""), ("source", "csv_import"), ("link", "")]:
             if col not in df.columns:
                 df[col] = default
 
         articles = []
+        skipped_old = 0
+
         for _, row in df.iterrows():
+            published = pd.to_datetime(row.get("published", datetime.utcnow()), errors="coerce")
+            if pd.isna(published):
+                published = datetime.utcnow()
+            else:
+                published = published.to_pydatetime()
+
+            # Apply same date filter to CSV imports
+            if not _is_recent(published):
+                skipped_old += 1
+                continue
+
             doc = {
                 "title": str(row["title"]).strip(),
                 "summary": _clean_text(str(row.get("summary", ""))),
                 "source": str(row.get("source", "csv_import")),
                 "link": str(row.get("link", "")),
-                "published": pd.to_datetime(row.get("published", datetime.utcnow()), errors="coerce") or datetime.utcnow(),
+                "published": published,
                 "ingested_at": datetime.utcnow(),
                 "processed": False,
                 "sentiment": None,
@@ -128,7 +171,10 @@ def fetch_from_csv(filepath: str) -> List[Dict]:
             }
             articles.append(doc)
 
-        logger.info(f"CSV: loaded {len(articles)} articles from {filepath}")
+        if skipped_old:
+            logger.info(f"CSV: skipped {skipped_old} articles older than {CUTOFF_DAYS} days")
+
+        logger.info(f"CSV: loaded {len(articles)} recent articles from {filepath}")
         return articles
 
     except Exception as e:

@@ -20,13 +20,17 @@ MONGO_COLLECTION_RAW = os.getenv("MONGO_COLLECTION_RAW", "raw_articles")
 # ── RSS Feed Sources ──────────────────────────────────────
 # These are free, no API key needed
 RSS_FEEDS = {
-    "yahoo_finance":       "https://finance.yahoo.com/news/rssindex",
-    "reuters_business":    "https://feeds.reuters.com/reuters/businessNews",
-    "marketwatch":         "https://feeds.content.dowjones.io/public/rss/mw_realtimeheadlines",
-    "seeking_alpha":       "https://seekingalpha.com/feed.xml",
-    "investing_com":       "https://www.investing.com/rss/news.rss",
+    "yahoo_finance":      "https://finance.yahoo.com/news/rssindex",
+    "reuters_business":   "https://feeds.reuters.com/reuters/businessNews",
+    "marketwatch":        "https://feeds.content.dowjones.io/public/rss/mw_realtimeheadlines",
+    "seeking_alpha":      "https://seekingalpha.com/feed.xml",
+    "investing_com":      "https://www.investing.com/rss/news.rss",
+    "cnbc_finance":       "https://www.cnbc.com/id/10000664/device/rss/rss.html",
+    "ft_markets":         "https://www.ft.com/rss/home/uk",         # Financial Times
+    "wsj_markets":        "https://feeds.a.dj.com/rss/RSSMarketsMain.xml",  # Wall Street Journal
+    "economist":          "https://www.economist.com/finance-and-economics/rss.xml",
+    "business_insider":   "https://feeds.businessinsider.com/custom/all",
 }
-
 # ── Ingestion Settings ────────────────────────────────────
 INGESTION_BATCH_SIZE = int(os.getenv("INGESTION_BATCH_SIZE", 100))
 
