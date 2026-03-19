@@ -1,7 +1,7 @@
-# Financial News Intelligence System
-## Phase 1: Data Ingestion & Storage
+ Financial News Intelligence System
+Phase 1: Data Ingestion & Storage
 
-### Project Structure
+ Project Structure
 ```
 financial_news_intelligence/
 ├── config/
@@ -21,32 +21,32 @@ financial_news_intelligence/
 └── .env.example             # Template for credentials
 ```
 
-### Setup Instructions
+Setup Instructions
 
-**Step 1: Install dependencies**
+Step 1: Install dependencies
 ```bash
 pip install pymongo feedparser pandas python-dotenv requests
 ```
 
-**Step 2: MongoDB Atlas (free)**
+Step 2: MongoDB Atlas (free)
 1. Go to https://www.mongodb.com/atlas
 2. Create free account → Create free cluster (M0)
 3. Database Access → Add user → username/password
 4. Network Access → Add IP → 0.0.0.0/0 (allow all for dev)
 5. Connect → Drivers → Copy connection string
 
-**Step 3: Configure environment**
+Step 3: Configure environment
 ```bash
 cp .env.example .env
 # Edit .env with your MongoDB Atlas URI
 ```
 
-**Step 4: Run ingestion**
+Step 4: Run ingestion**
 ```bash
 python main.py
 ```
 
-### What Phase 1 Delivers
+ What Phase 1 Delivers
 - Raw articles stored in MongoDB (`raw_articles` collection)
 - Deduplication via (source, title) unique index
 - Ingestion logs with counts per source
