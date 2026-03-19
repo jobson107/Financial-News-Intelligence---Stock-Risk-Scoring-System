@@ -10,7 +10,7 @@ _user = quote_plus(os.getenv("MONGO_USERNAME", "jobsonjoby7_db_user"))
 _pass = quote_plus(os.getenv("MONGO_PASSWORD", "KingJobson@9637"))
 _host = os.getenv("MONGO_HOST", "cluster1.vajk63h.mongodb.net")
 
-MONGODB_URI = (
+MONGO_URI = (
     f"mongodb+srv://{_user}:{_pass}@{_host}/"
     f"?retryWrites=true&w=majority&appName=Cluster1"
 )

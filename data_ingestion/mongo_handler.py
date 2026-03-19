@@ -1,8 +1,8 @@
 from pymongo import MongoClient, ASCENDING
-from pymongo.errors import DuplicateKeyError, ConnectionFailure, BulkWriteError
+from pymongo.errors import ConnectionFailure, BulkWriteError
 from datetime import datetime
 from typing import List, Dict, Optional
-from config.settings import MONGODB_URI, MONGO_DB_NAME, MONGO_COLLECTION_RAW
+from config.settings import MONGO_URI, MONGO_DB_NAME, MONGO_COLLECTION_RAW
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -11,7 +11,6 @@ logger = get_logger(__name__)
 class MongoHandler:
     """
     Handles all MongoDB operations for the ingestion layer.
-
     Keeps all DB logic here — pipeline.py and fetcher.py never
     touch pymongo directly. This makes it easy to swap the DB later.
     """
@@ -28,27 +27,18 @@ class MongoHandler:
         Call this once at startup.
         """
         try:
-            # serverSelectionTimeoutMS=5000 → fails fast if URI is wrong
-            self._client = MongoClient(MONGODB_URI, serverSelectionTimeoutMS=5000)
-
-            # Ping to verify connection is actually alive
+            self._client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
             self._client.admin.command("ping")
 
             self._db = self._client[MONGO_DB_NAME]
             self._collection = self._db[MONGO_COLLECTION_RAW]
 
-            # Create unique index on (source, title) → prevents duplicate articles
-            # background=True → doesn't block reads while building index
             self._collection.create_index(
                 [("source", ASCENDING), ("title", ASCENDING)],
                 unique=True,
                 background=True
             )
-
-            # Index on processed flag → Phase 2 NLP pipeline queries this heavily
             self._collection.create_index([("processed", ASCENDING)], background=True)
-
-            # Index on ingested_at → useful for date range queries
             self._collection.create_index([("ingested_at", ASCENDING)], background=True)
 
             logger.info(f"Connected to MongoDB | DB: {MONGO_DB_NAME} | Collection: {MONGO_COLLECTION_RAW}")
@@ -66,27 +56,26 @@ class MongoHandler:
     def insert_articles(self, articles: List[Dict]) -> Dict:
         """
         Bulk insert articles. Skips duplicates silently.
-
-        Returns:
-            {"inserted": int, "duplicates": int, "errors": int}
+        Returns: {"inserted": int, "duplicates": int, "errors": int}
         """
         if not articles:
             return {"inserted": 0, "duplicates": 0, "errors": 0}
+
+        # Validate before inserting
+        articles = self._validate_articles(articles)
 
         inserted = 0
         duplicates = 0
         errors = 0
 
-        # ordered=False → continues inserting even if one fails (e.g. duplicate)
         try:
             result = self._collection.insert_many(articles, ordered=False)
             inserted = len(result.inserted_ids)
 
         except BulkWriteError as bwe:
-            # BulkWriteError contains partial results — extract what succeeded
             inserted = bwe.details.get("nInserted", 0)
             for error in bwe.details.get("writeErrors", []):
-                if error.get("code") == 11000:  # 11000 = duplicate key error code
+                if error.get("code") == 11000:
                     duplicates += 1
                 else:
                     errors += 1
@@ -97,7 +86,7 @@ class MongoHandler:
     def get_unprocessed(self, limit: int = 500) -> List[Dict]:
         """
         Returns articles not yet processed by the NLP pipeline.
-        Phase 2 will call this.
+        Phase 2 calls this.
         """
         cursor = self._collection.find(
             {"processed": False},
@@ -105,18 +94,25 @@ class MongoHandler:
         ).limit(limit)
         return list(cursor)
 
-    def mark_processed(self, doc_id, sentiment_score: float, keywords: List[str]) -> None:
+    def mark_processed(self, doc_id, sentiment_score: float, keywords: List[str], extra_fields: dict = None) -> None:
         """
         Called by Phase 2 NLP pipeline after processing an article.
+        Saves sentiment, keywords, risk score and all NLP results back to MongoDB.
         """
+        update_data = {
+            "processed": True,
+            "sentiment": sentiment_score,
+            "keywords": keywords,
+            "processed_at": datetime.utcnow()
+        }
+
+        # Phase 2 extra fields: risk_score, risk_label, sector, etc.
+        if extra_fields:
+            update_data.update(extra_fields)
+
         self._collection.update_one(
             {"_id": doc_id},
-            {"$set": {
-                "processed": True,
-                "sentiment": sentiment_score,
-                "keywords": keywords,
-                "processed_at": datetime.utcnow()
-            }}
+            {"$set": update_data}
         )
 
     def get_stats(self) -> Dict:
@@ -125,7 +121,6 @@ class MongoHandler:
         processed = self._collection.count_documents({"processed": True})
         unprocessed = total - processed
 
-        # Per-source breakdown
         pipeline = [
             {"$group": {"_id": "$source", "count": {"$sum": 1}}},
             {"$sort": {"count": -1}}
@@ -138,17 +133,15 @@ class MongoHandler:
             "unprocessed": unprocessed,
             "by_source": by_source
         }
+
     def _validate_articles(self, articles: List[Dict]) -> List[Dict]:
-        valid=[]
+        """Filters out documents missing required fields before insert."""
+        valid = []
         for doc in articles:
-            
             if not doc.get("title") or len(doc["title"]) < 5:
                 continue
-       
             if not doc.get("source"):
                 continue
             valid.append(doc)
         logger.info(f"Validation: {len(valid)}/{len(articles)} passed")
         return valid
-        
-           
