@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from collections import Counter
 from typing import Tuple
 from utils.logger import get_logger
 
@@ -22,6 +23,19 @@ def load_and_prepare(csv_path: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
     df = df.dropna(subset=["risk_label", "sentiment_label"])
     logger.info(f"After dropping nulls: {len(df)} rows")
 
+    # ── Remove classes with fewer than 2 samples ─────────
+    # Classes with only 1 sample crash train/test split and CV
+    # They are also statistically meaningless for training
+    for col in ["risk_label", "sentiment_label"]:
+        counts = Counter(df[col])
+        valid_classes = [cls for cls, count in counts.items() if count >= 2]
+        removed = [cls for cls, count in counts.items() if count < 2]
+        if removed:
+            logger.warning(f"{col}: removing classes with < 2 samples: {removed}")
+        df = df[df[col].isin(valid_classes)]
+
+    logger.info(f"After class filtering: {len(df)} rows")
+
     # ── Feature Engineering ───────────────────────────────
 
     # 1. Core NLP scores (already computed in Phase 2)
@@ -42,13 +56,8 @@ def load_and_prepare(csv_path: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
     feature_cols.extend(sector_cols)
 
     # 3. Derived features
-    # Sentiment polarity strength (absolute value — strong either way)
     df["sentiment_strength"] = df["sentiment_compound"].abs()
-
-    # Negative dominance — how much negative score dominates positive
     df["neg_dominance"] = df["sentiment_negative"] - df["sentiment_positive"]
-
-    # Combined risk signal
     df["combined_risk"] = (df["risk_score"] + df["sentiment_risk"]) / 2
 
     feature_cols.extend(["sentiment_strength", "neg_dominance", "combined_risk"])

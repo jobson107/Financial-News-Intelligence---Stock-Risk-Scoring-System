@@ -1,0 +1,332 @@
+[
+  {
+    "target": "risk_label",
+    "best_model": "logistic_regression",
+    "best_f1": 1.0,
+    "classes": [
+      "low",
+      "medium"
+    ],
+    "model_results": {
+      "logistic_regression": {
+        "accuracy": 1.0,
+        "f1_weighted": 1.0,
+        "roc_auc": "N/A",
+        "cv_mean_f1": 0.876,
+        "cv_std_f1": 0.0802,
+        "confusion_matrix": [
+          [
+            8,
+            0
+          ],
+          [
+            0,
+            2
+          ]
+        ],
+        "classification_report": {
+          "low": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 8.0
+          },
+          "medium": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 2.0
+          },
+          "accuracy": 1.0,
+          "macro avg": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 10.0
+          },
+          "weighted avg": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 10.0
+          }
+        }
+      },
+      "random_forest": {
+        "accuracy": 1.0,
+        "f1_weighted": 1.0,
+        "roc_auc": "N/A",
+        "cv_mean_f1": 0.9082,
+        "cv_std_f1": 0.0474,
+        "confusion_matrix": [
+          [
+            8,
+            0
+          ],
+          [
+            0,
+            2
+          ]
+        ],
+        "classification_report": {
+          "low": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 8.0
+          },
+          "medium": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 2.0
+          },
+          "accuracy": 1.0,
+          "macro avg": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 10.0
+          },
+          "weighted avg": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 10.0
+          }
+        }
+      },
+      "xgboost": {
+        "accuracy": 1.0,
+        "f1_weighted": 1.0,
+        "roc_auc": "N/A",
+        "cv_mean_f1": 0.9748,
+        "cv_std_f1": 0.0504,
+        "confusion_matrix": [
+          [
+            8,
+            0
+          ],
+          [
+            0,
+            2
+          ]
+        ],
+        "classification_report": {
+          "low": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 8.0
+          },
+          "medium": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 2.0
+          },
+          "accuracy": 1.0,
+          "macro avg": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 10.0
+          },
+          "weighted avg": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 10.0
+          }
+        }
+      }
+    },
+    "model_path": "models\\risk_label_best_model.pkl",
+    "encoder_path": "models\\risk_label_label_encoder.pkl"
+  },
+  {
+    "target": "sentiment_label",
+    "best_model": "logistic_regression",
+    "best_f1": 1.0,
+    "classes": [
+      "negative",
+      "neutral",
+      "positive"
+    ],
+    "model_results": {
+      "logistic_regression": {
+        "accuracy": 1.0,
+        "f1_weighted": 1.0,
+        "roc_auc": 1.0,
+        "cv_mean_f1": 0.9556,
+        "cv_std_f1": 0.0889,
+        "confusion_matrix": [
+          [
+            2,
+            0,
+            0
+          ],
+          [
+            0,
+            4,
+            0
+          ],
+          [
+            0,
+            0,
+            4
+          ]
+        ],
+        "classification_report": {
+          "negative": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 2.0
+          },
+          "neutral": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 4.0
+          },
+          "positive": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 4.0
+          },
+          "accuracy": 1.0,
+          "macro avg": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 10.0
+          },
+          "weighted avg": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 10.0
+          }
+        }
+      },
+      "random_forest": {
+        "accuracy": 1.0,
+        "f1_weighted": 1.0,
+        "roc_auc": 1.0,
+        "cv_mean_f1": 0.9753,
+        "cv_std_f1": 0.0494,
+        "confusion_matrix": [
+          [
+            2,
+            0,
+            0
+          ],
+          [
+            0,
+            4,
+            0
+          ],
+          [
+            0,
+            0,
+            4
+          ]
+        ],
+        "classification_report": {
+          "negative": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 2.0
+          },
+          "neutral": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 4.0
+          },
+          "positive": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 4.0
+          },
+          "accuracy": 1.0,
+          "macro avg": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 10.0
+          },
+          "weighted avg": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 10.0
+          }
+        }
+      },
+      "xgboost": {
+        "accuracy": 1.0,
+        "f1_weighted": 1.0,
+        "roc_auc": 1.0,
+        "cv_mean_f1": 0.9768,
+        "cv_std_f1": 0.0464,
+        "confusion_matrix": [
+          [
+            2,
+            0,
+            0
+          ],
+          [
+            0,
+            4,
+            0
+          ],
+          [
+            0,
+            0,
+            4
+          ]
+        ],
+        "classification_report": {
+          "negative": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 2.0
+          },
+          "neutral": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 4.0
+          },
+          "positive": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 4.0
+          },
+          "accuracy": 1.0,
+          "macro avg": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 10.0
+          },
+          "weighted avg": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 10.0
+          }
+        }
+      }
+    },
+    "model_path": "models\\sentiment_label_best_model.pkl",
+    "encoder_path": "models\\sentiment_label_label_encoder.pkl"
+  }
+]
