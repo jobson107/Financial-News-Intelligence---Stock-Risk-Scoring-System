@@ -78,7 +78,7 @@ def generate_report(all_results: List[Dict]) -> str:
     lines.append("END OF REPORT")
     lines.append("=" * 60)
 
-    with open(txt_path, "w") as f:
+    with open(txt_path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines))
 
     logger.info(f"Text report saved: {txt_path}")

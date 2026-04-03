@@ -2,17 +2,19 @@
 Financial News Intelligence System
 
 Usage:
-    python main.py --phase 1              # Ingest from RSS feeds
-    python main.py --phase 1 --csv path   # Ingest from CSV
-    python main.py --phase 2              # NLP pipeline
-    python main.py --phase 3              # ML models
-    python main.py --phase all            # Run all phases
+    python main.py --phase 1
+    python main.py --phase 1 --csv data/all_the_news.csv
+    python main.py --phase 2
+    python main.py --phase 3
+    python main.py --phase 4
+    python main.py --phase all
 """
 
 import argparse
 from data_ingestion.pipeline import IngestionPipeline
 from nlp.nlp_pipeline import NLPPipeline
 from ml.ml_pipeline import MLPipeline
+from forecasting.phase4_pipeline import Phase4Pipeline
 
 
 def main():
@@ -20,15 +22,15 @@ def main():
     parser.add_argument(
         "--phase",
         type=str,
-        choices=["1", "2", "3", "all"],
+        choices=["1", "2", "3", "4", "all"],
         default="1",
-        help="Which phase to run: 1 (ingestion), 2 (NLP), 3 (ML), all (all phases)"
+        help="Which phase to run"
     )
     parser.add_argument(
         "--csv",
         type=str,
         default=None,
-        help="Path to CSV file (Phase 1: Kaggle dataset | Phase 3: override NLP output)"
+        help="Path to CSV file"
     )
     args = parser.parse_args()
 
@@ -43,6 +45,10 @@ def main():
     if args.phase in ("3", "all"):
         ml = MLPipeline()
         ml.run(csv_path=args.csv)
+
+    if args.phase in ("4", "all"):
+        p4 = Phase4Pipeline()
+        p4.run(csv_path=args.csv)
 
 
 if __name__ == "__main__":

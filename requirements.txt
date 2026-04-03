@@ -7,3 +7,7 @@ vaderSentiment==3.3.2
 scikit-learn==1.4.0
 numpy==1.26.4
 xgboost==2.0.3
+yfinance==0.2.36
+statsmodels==0.14.1
+prophet==1.1.5
+matplotlib==3.8.2
