@@ -1,0 +1,35 @@
+============================================================
+PHASE 3: ML MODEL EVALUATION REPORT
+Generated: 2026-04-17 03:13:52 UTC
+============================================================
+
+────────────────────────────────────────────────────────────
+TARGET: PRICE_MOVEMENT
+Classes: ['bearish', 'bullish', 'neutral']
+Best Model: xgboost (F1=0.5136)
+Saved to: models\price_movement_best_model.pkl
+
+Model Comparison
+Model                       Accuracy         F1    ROC-AUC        CV F1
+----------------------------------------------------------------------
+logistic_regression           0.4737     0.4679     0.6642   0.2984 ± 0.0953
+random_forest                 0.5263     0.4695     0.5317   0.5322 ± 0.0414
+xgboost                       0.5263     0.5136     0.6013   0.5145 ± 0.0414
+
+Best Model (xgboost) — Classification Report:
+Class                 Precision     Recall         F1    Support
+-------------------------------------------------------
+bearish                  0.2500     0.3333     0.2857          3
+bullish                  0.3333     0.2000     0.2500          5
+neutral                  0.6667     0.7273     0.6957         11
+macro avg                0.4167     0.4202     0.4105         19
+weighted avg             0.5132     0.5263     0.5136         19
+
+Confusion Matrix (['bearish', 'bullish', 'neutral']):
+     1     0     2
+     2     1     2
+     1     2     8
+
+============================================================
+END OF REPORT
+============================================================

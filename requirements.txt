@@ -11,3 +11,7 @@ yfinance==0.2.36
 statsmodels==0.14.1
 prophet==1.1.5
 matplotlib==3.8.2
+fastapi==0.110.0
+uvicorn==0.29.0
+pydantic==2.6.4
+torch==2.2.0
